@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -37,7 +38,7 @@ public class BookingController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public BookingResponse createBooking(@RequestBody CreateBookingRequest request) {
+    public BookingResponse createBooking(@Valid @RequestBody CreateBookingRequest request) {
         return BookingWebMapper.toResponse(
                 createBookingUseCase.createBooking(
                         request.userId(),
