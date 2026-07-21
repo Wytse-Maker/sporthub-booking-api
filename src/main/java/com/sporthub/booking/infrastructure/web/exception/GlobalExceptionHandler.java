@@ -1,4 +1,5 @@
 package com.sporthub.booking.infrastructure.web.exception;
+
 import com.sporthub.booking.domain.exception.BookingValidationException;
 import com.sporthub.booking.domain.exception.ResourceNotFoundException;
 import com.sporthub.booking.infrastructure.web.dto.ErrorResponse;
@@ -8,6 +9,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -20,6 +25,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BookingValidationException.class)
     public ResponseEntity<ErrorResponse> handleBookingValidationException(BookingValidationException exception) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
+        String message = exception.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message);
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message) {
