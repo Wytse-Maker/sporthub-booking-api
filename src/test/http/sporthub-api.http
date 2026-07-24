@@ -1,0 +1,44 @@
+### Get all sport events
+GET http://localhost:8080/api/sport-events
+
+
+### Get sport event by id
+GET http://localhost:8080/api/sport-events/1
+
+
+### Create booking
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "sportEventId": 1,
+  "numberOfTickets": 2
+}
+
+
+### Get booking by id
+GET http://localhost:8080/api/bookings/1
+
+
+### Get bookings by user id
+GET http://localhost:8080/api/bookings/users/1
+
+
+### Cancel booking
+PATCH http://localhost:8080/api/bookings/1/cancel
+
+
+### Validation error: number of tickets is zero
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "sportEventId": 1,
+  "numberOfTickets": 0
+}
+
+
+### Not found error: booking does not exist
+GET http://localhost:8080/api/bookings/999
