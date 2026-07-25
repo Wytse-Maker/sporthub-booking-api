@@ -15,9 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
+@Tag(name = "Bookings", description = "Endpoints for creating, retrieving and cancelling bookings")
 @RestController
 @RequestMapping("/api/bookings")
 public class BookingController {
@@ -36,6 +39,10 @@ public class BookingController {
         this.getBookingUseCase = getBookingUseCase;
     }
 
+    @Operation(
+            summary = "Create a booking",
+            description = "Creates a new booking for a user and sport event. The number of tickets must be between 1 and 4."
+    )
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BookingResponse createBooking(@Valid @RequestBody CreateBookingRequest request) {
@@ -48,6 +55,10 @@ public class BookingController {
         );
     }
 
+    @Operation(
+            summary = "Get booking by ID",
+            description = "Returns a booking by its ID."
+    )
     @GetMapping("/{bookingId}")
     public BookingResponse getBookingById(@PathVariable Long bookingId) {
         return BookingWebMapper.toResponse(
@@ -55,6 +66,10 @@ public class BookingController {
         );
     }
 
+    @Operation(
+            summary = "Get bookings by user ID",
+            description = "Returns all bookings linked to a specific user."
+    )
     @GetMapping("/users/{userId}")
     public List<BookingResponse> getBookingsByUserId(@PathVariable Long userId) {
         return getBookingUseCase.getBookingsByUserId(userId)
@@ -63,6 +78,10 @@ public class BookingController {
                 .toList();
     }
 
+    @Operation(
+            summary = "Cancel booking",
+            description = "Cancels an existing booking if the event starts more than 24 hours in the future."
+    )
     @PatchMapping("/{bookingId}/cancel")
     public BookingResponse cancelBooking(@PathVariable Long bookingId) {
         return BookingWebMapper.toResponse(
