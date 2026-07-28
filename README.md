@@ -1,5 +1,7 @@
 # SportHub Booking API
 
+[![Maven CI](https://github.com/Wytse-Maker/sporthub-booking-api/actions/workflows/maven-ci.yml/badge.svg)](https://github.com/Wytse-Maker/sporthub-booking-api/actions/workflows/maven-ci.yml)
+
 SportHub Booking API is a backend portfolio project for booking tickets for NBA sport events.
 
 The project is built with Java, Spring Boot, PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing and API documentation.
