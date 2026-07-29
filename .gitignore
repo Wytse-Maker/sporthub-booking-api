@@ -4,6 +4,20 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Environment variables ###
+.env
+.env.local
+.env.*.local
+!.env.example
+
+### Logs ###
+logs/
+*.log
+
+### OS files ###
+.DS_Store
+Thumbs.db
+
 ### STS ###
 .apt_generated
 .classpath
