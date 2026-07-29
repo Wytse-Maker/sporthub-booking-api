@@ -4,7 +4,7 @@
 
 SportHub Booking API is a backend portfolio project for booking tickets for NBA sport events.
 
-The project is built with Java, Spring Boot, PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing and API documentation.
+The project is built with Java, Spring Boot, PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing, API documentation, CI automation and environment based configuration.
 
 ---
 
@@ -19,6 +19,7 @@ The goal of this project is to build a clean and maintainable backend API where 
 - Cancel bookings
 - Receive clear validation and error responses
 - Explore and test the API through Swagger/OpenAPI
+- Run automated tests through GitHub Actions CI
 
 This project was created as a portfolio project to demonstrate junior backend developer skills.
 
@@ -40,6 +41,7 @@ This project was created as a portfolio project to demonstrate junior backend de
 - springdoc-openapi
 - Swagger UI
 - Git and GitHub
+- GitHub Actions
 
 ---
 
@@ -222,6 +224,7 @@ It includes:
 - Database seeding
 - Global exception handling
 - Swagger/OpenAPI documentation
+- GitHub Actions workflow
 
 The outer part connects the outside world to the inner business logic.
 
@@ -697,12 +700,47 @@ sporthub_booking_db
 Example local configuration:
 
 ```text
-spring.datasource.url=jdbc:postgresql://localhost:5432/sporthub_booking_db
-spring.datasource.username=postgres
-spring.datasource.password=postgres
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/sporthub_booking_db}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:postgres}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:postgres}
 ```
 
 For real production projects, credentials should be stored in environment variables and not committed directly.
+
+---
+
+## Environment Variables
+
+The project supports environment variables for database configuration.
+
+The application uses default local values when no environment variables are provided.
+
+```text
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/sporthub_booking_db}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:postgres}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:postgres}
+spring.jpa.hibernate.ddl-auto=${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+```
+
+Supported environment variables:
+
+```text
+SPRING_DATASOURCE_URL
+SPRING_DATASOURCE_USERNAME
+SPRING_DATASOURCE_PASSWORD
+SPRING_JPA_HIBERNATE_DDL_AUTO
+```
+
+Example local values:
+
+```text
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/sporthub_booking_db
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=postgres
+SPRING_JPA_HIBERNATE_DDL_AUTO=update
+```
+
+This makes the project easier to configure in different environments without changing the source code.
 
 ---
 
@@ -711,7 +749,7 @@ For real production projects, credentials should be stored in environment variab
 The project uses:
 
 ```text
-spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.ddl-auto=${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 ```
@@ -879,6 +917,33 @@ These annotations improve the readability of the generated API documentation.
 
 ---
 
+## Continuous Integration
+
+The project uses GitHub Actions for continuous integration.
+
+The workflow file is located at:
+
+```text
+.github/workflows/maven-ci.yml
+```
+
+The CI workflow automatically runs when:
+
+- Code is pushed to `main`
+- A pull request is opened against `main`
+
+The workflow performs the following steps:
+
+```text
+Checkout repository
+Set up Java 25
+Run Maven tests
+```
+
+This helps ensure that changes are tested before they are merged into the main branch.
+
+---
+
 ## How to Run the Project Locally
 
 ### 1. Clone the repository
@@ -902,12 +967,21 @@ CREATE DATABASE sporthub_booking_db;
 
 ### 3. Configure database connection
 
-Update `src/main/resources/application.properties` if needed:
+The project already contains default local database values.
+
+By default, the application connects to:
 
 ```text
-spring.datasource.url=jdbc:postgresql://localhost:5432/sporthub_booking_db
-spring.datasource.username=postgres
-spring.datasource.password=postgres
+jdbc:postgresql://localhost:5432/sporthub_booking_db
+```
+
+Optional environment variables can be used to override the default configuration:
+
+```text
+SPRING_DATASOURCE_URL
+SPRING_DATASOURCE_USERNAME
+SPRING_DATASOURCE_PASSWORD
+SPRING_JPA_HIBERNATE_DDL_AUTO
 ```
 
 ---
@@ -1064,6 +1138,14 @@ This layer configures Spring Beans, seed data and API documentation.
 
 ---
 
+### CI Configuration
+
+- `.github/workflows/maven-ci.yml`
+
+This file configures the GitHub Actions workflow that automatically runs the Maven tests.
+
+---
+
 ## What This Project Demonstrates
 
 This project demonstrates:
@@ -1082,6 +1164,8 @@ This project demonstrates:
 - Manual endpoint testing
 - Swagger/OpenAPI documentation
 - GitHub workflow with feature branches and pull requests
+- GitHub Actions CI
+- Environment variable based configuration
 
 ---
 
@@ -1107,6 +1191,10 @@ Current status:
 - README documentation added
 - Swagger/OpenAPI documentation added
 - Swagger endpoint descriptions added
+- GitHub Actions CI workflow added
+- CI badge added to README
+- Environment variable configuration added
+- Environment variable documentation added
 
 ---
 
@@ -1116,6 +1204,4 @@ Current status:
 - Add Docker support
 - Add authentication and authorization
 - Add pagination and filtering
-- Add CI pipeline with GitHub Actions
-- Add environment variable based configuration
 - Add more advanced booking rules
