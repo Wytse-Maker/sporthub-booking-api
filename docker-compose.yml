@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: sporthub-postgres
+    environment:
+      POSTGRES_DB: sporthub_booking_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - sporthub_postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: sporthub-booking-api
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sporthub_booking_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8080:8080"
+
+volumes:
+  sporthub_postgres_data:
