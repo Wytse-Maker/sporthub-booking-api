@@ -4,7 +4,7 @@
 
 SportHub Booking API is a backend portfolio project for booking tickets for NBA sport events.
 
-The project is built with Java, Spring Boot, PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing, API documentation, CI automation and environment based configuration.
+The project is built with Java, Spring Boot, PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing, API documentation, CI automation, Docker support and environment based configuration.
 
 ---
 
@@ -20,6 +20,7 @@ The goal of this project is to build a clean and maintainable backend API where 
 - Receive clear validation and error responses
 - Explore and test the API through Swagger/OpenAPI
 - Run automated tests through GitHub Actions CI
+- Run the application with Docker and PostgreSQL
 
 This project was created as a portfolio project to demonstrate junior backend developer skills.
 
@@ -40,6 +41,8 @@ This project was created as a portfolio project to demonstrate junior backend de
 - Lombok
 - springdoc-openapi
 - Swagger UI
+- Docker
+- Docker Compose
 - Git and GitHub
 - GitHub Actions
 
@@ -225,6 +228,7 @@ It includes:
 - Global exception handling
 - Swagger/OpenAPI documentation
 - GitHub Actions workflow
+- Docker configuration
 
 The outer part connects the outside world to the inner business logic.
 
@@ -944,6 +948,96 @@ This helps ensure that changes are tested before they are merged into the main b
 
 ---
 
+## Docker Support
+
+The project can also be started with Docker.
+
+Docker makes it possible to run the Spring Boot application and PostgreSQL database together without manually configuring a local database.
+
+The Docker setup includes:
+
+- Spring Boot application container
+- PostgreSQL 17 container
+- Docker volume for PostgreSQL data
+- Environment variables for database configuration
+
+Important Docker files:
+
+```text
+Dockerfile
+docker-compose.yml
+```
+
+### Start the project with Docker
+
+Make sure Docker Desktop is running.
+
+Then run:
+
+```text
+docker compose up --build
+```
+
+This will:
+
+- Build the Spring Boot application image
+- Start the PostgreSQL container
+- Start the application container
+- Connect the application to PostgreSQL through Docker Compose
+
+After the application has started, open:
+
+```text
+http://localhost:8080/api/sport-events
+```
+
+Swagger UI is available at:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+### Stop the Docker containers
+
+To stop the running containers, press:
+
+```text
+Ctrl + C
+```
+
+Then run:
+
+```text
+docker compose down
+```
+
+### PostgreSQL Docker Port
+
+The PostgreSQL container uses port `5432` internally.
+
+On the local machine, it is exposed on:
+
+```text
+5433
+```
+
+This avoids conflicts with a locally installed PostgreSQL server that may already be using port `5432`.
+
+### Docker Environment Variables
+
+The Docker Compose file provides these environment variables to the application:
+
+```text
+SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sporthub_booking_db
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=postgres
+SPRING_JPA_HIBERNATE_DDL_AUTO=update
+```
+
+This allows the application container to connect to the PostgreSQL container.
+
+---
+
 ## How to Run the Project Locally
 
 ### 1. Clone the repository
@@ -1042,7 +1136,7 @@ http://localhost:8080/swagger-ui.html
 
 ---
 
-## Important Classes
+## Important Classes and Files
 
 ### Domain Layer
 
@@ -1146,6 +1240,15 @@ This file configures the GitHub Actions workflow that automatically runs the Mav
 
 ---
 
+### Docker Configuration
+
+- `Dockerfile`
+- `docker-compose.yml`
+
+These files configure the Spring Boot application container and the PostgreSQL database container.
+
+---
+
 ## What This Project Demonstrates
 
 This project demonstrates:
@@ -1166,6 +1269,7 @@ This project demonstrates:
 - GitHub workflow with feature branches and pull requests
 - GitHub Actions CI
 - Environment variable based configuration
+- Docker and Docker Compose support
 
 ---
 
@@ -1195,13 +1299,16 @@ Current status:
 - CI badge added to README
 - Environment variable configuration added
 - Environment variable documentation added
+- Dockerfile added
+- Docker Compose support added
+- PostgreSQL Docker container configured
+- Docker documentation added
 
 ---
 
 ## Next Possible Improvements
 
 - Add integration tests
-- Add Docker support
 - Add authentication and authorization
 - Add pagination and filtering
 - Add more advanced booking rules
