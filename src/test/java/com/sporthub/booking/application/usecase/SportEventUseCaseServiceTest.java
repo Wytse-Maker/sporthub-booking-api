@@ -15,6 +15,9 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
+import com.sporthub.booking.domain.model.PagedResult;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class SportEventUseCaseServiceTest {
@@ -67,6 +70,39 @@ class SportEventUseCaseServiceTest {
         );
 
         assertEquals("Sport event not found with id: 99", exception.getMessage());
+    }
+    @Test
+    void getSportEventsReturnsPagedResult() {
+        SportEvent sportEvent = new SportEvent();
+        sportEvent.setId(1L);
+
+        PagedResult<SportEvent> pagedResult = new PagedResult<>(
+                List.of(sportEvent),
+                0,
+                10,
+                1,
+                1,
+                true
+        );
+
+        when(sportEventRepositoryPort.findAll(0, 10, "Lakers", "Los Angeles"))
+                .thenReturn(pagedResult);
+
+        PagedResult<SportEvent> result = sportEventUseCaseService.getSportEvents(
+                0,
+                10,
+                "Lakers",
+                "Los Angeles"
+        );
+
+        assertEquals(1, result.getContent().size());
+        assertEquals(0, result.getPage());
+        assertEquals(10, result.getSize());
+        assertEquals(1, result.getTotalElements());
+        assertEquals(1, result.getTotalPages());
+        assertTrue(result.isLast());
+
+        verify(sportEventRepositoryPort).findAll(0, 10, "Lakers", "Los Angeles");
     }
 
 }
