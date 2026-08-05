@@ -4,7 +4,7 @@
 
 SportHub Booking API is a backend portfolio project for booking tickets for NBA sport events.
 
-The project is built with Java, Spring Boot, PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing, API documentation, CI automation, Docker support and environment based configuration.
+The project is built with Java, Spring Boot, PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing, API documentation, CI automation, Docker support, pagination, filtering and environment based configuration.
 
 ---
 
@@ -13,6 +13,9 @@ The project is built with Java, Spring Boot, PostgreSQL and follows a hexagonal 
 The goal of this project is to build a clean and maintainable backend API where users can:
 
 - View available sport events
+- View sport events with pagination
+- Filter sport events by team name
+- Filter sport events by venue city
 - Create bookings for sport events
 - Retrieve bookings
 - Retrieve bookings by user
@@ -95,6 +98,7 @@ Important domain classes:
 - `Team`
 - `Venue`
 - `BookingStatus`
+- `PagedResult`
 
 These classes describe the business concepts of the application.
 
@@ -108,7 +112,18 @@ A `Booking` contains:
 - Booking date
 - Booking status
 
+A `PagedResult` contains:
+
+- Content
+- Current page
+- Page size
+- Total elements
+- Total pages
+- Last page indicator
+
 The domain model stays clean and does not contain JPA annotations such as `@Entity`.
+
+The application uses its own `PagedResult` instead of Spring Data `Page` in the domain layer. This keeps the core application independent from Spring-specific classes.
 
 ---
 
@@ -204,7 +219,9 @@ Business rules include:
 
 It allows the application to:
 
-- Retrieve all sport events
+- Retrieve sport events with pagination
+- Filter sport events by team name
+- Filter sport events by venue city
 - Retrieve a sport event by ID
 - Throw a `ResourceNotFoundException` when a sport event does not exist
 
@@ -247,6 +264,20 @@ Client
 → BookingRepositoryPort
 → BookingPersistenceAdapter
 → SpringDataBookingRepository
+→ PostgreSQL
+```
+
+Example flow for retrieving paginated and filtered sport events:
+
+```text
+Client
+→ GET /api/sport-events?page=0&size=10&team=Lakers
+→ SportEventController
+→ GetSportEventsUseCase
+→ SportEventUseCaseService
+→ SportEventRepositoryPort
+→ SportEventPersistenceAdapter
+→ SpringDataSportEventRepository
 → PostgreSQL
 ```
 
@@ -324,6 +355,14 @@ By extending `JpaRepository`, Spring automatically provides methods such as:
 - `deleteById`
 - `count`
 
+`SpringDataSportEventRepository` also contains a custom query for pagination and filtering.
+
+It supports filtering sport events by:
+
+- Home team name
+- Away team name
+- Venue city
+
 ---
 
 ### Persistence Mappers
@@ -371,6 +410,8 @@ BookingRepositoryPort
 
 This allows the application layer to depend on ports while the infrastructure layer handles the technical implementation.
 
+`SportEventPersistenceAdapter` also converts Spring Data pagination results into the domain-safe `PagedResult`.
+
 ---
 
 ## Web Layer
@@ -416,9 +457,12 @@ Important DTOs:
 - `CreateBookingRequest`
 - `BookingResponse`
 - `SportEventResponse`
+- `PagedResponse`
 - `ErrorResponse`
 
 DTOs help prevent exposing the internal domain model directly through the API.
+
+`PagedResponse` is used to return paginated API responses to clients.
 
 ---
 
@@ -488,6 +532,9 @@ Available endpoints:
 
 ```text
 GET /api/sport-events
+GET /api/sport-events?page=0&size=10
+GET /api/sport-events?team=Lakers
+GET /api/sport-events?city=San%20Francisco
 GET /api/sport-events/{sportEventId}
 ```
 
@@ -499,6 +546,12 @@ These endpoints return sport event data such as:
 - Start time
 - Ticket price
 - Capacity
+
+The sport event list endpoint supports:
+
+- Pagination
+- Filtering by team name
+- Filtering by venue city
 
 ---
 
@@ -519,13 +572,57 @@ Users can create, retrieve and cancel bookings.
 
 ## API Endpoints
 
-### Get all sport events
+### Get sport events
 
 ```text
 GET /api/sport-events
 ```
 
-Returns all available sport events.
+Returns sport events with pagination information.
+
+Optional query parameters:
+
+```text
+page
+size
+team
+city
+```
+
+Examples:
+
+```text
+GET /api/sport-events?page=0&size=2
+GET /api/sport-events?page=1&size=2
+GET /api/sport-events?team=Lakers
+GET /api/sport-events?team=Warriors
+GET /api/sport-events?city=Los%20Angeles
+GET /api/sport-events?city=San%20Francisco
+GET /api/sport-events?page=0&size=5&team=Warriors&city=San%20Francisco
+```
+
+Example response:
+
+```text
+{
+  "content": [
+    {
+      "id": 1,
+      "homeTeamName": "Los Angeles Lakers",
+      "awayTeamName": "Golden State Warriors",
+      "venueName": "Crypto.com Arena",
+      "startTime": "2026-08-15T13:09:53",
+      "ticketPrice": 89.99,
+      "capacity": 20000
+    }
+  ],
+  "page": 0,
+  "size": 2,
+  "totalElements": 3,
+  "totalPages": 2,
+  "last": false
+}
+```
 
 ---
 
@@ -798,6 +895,7 @@ Test coverage includes:
 - Rejecting cancellations within 24 hours of the event
 - Handling missing bookings
 - Getting sport events
+- Getting paginated sport events
 - Handling missing sport events
 
 ---
@@ -861,6 +959,16 @@ Invoke-RestMethod `
   -Body '{"userId":1,"sportEventId":1,"numberOfTickets":2}'
 ```
 
+Sport event pagination and filtering can be tested in the browser:
+
+```text
+http://localhost:8080/api/sport-events?page=0&size=2
+http://localhost:8080/api/sport-events?team=Lakers
+http://localhost:8080/api/sport-events?team=Warriors
+http://localhost:8080/api/sport-events?city=Los%20Angeles
+http://localhost:8080/api/sport-events?city=San%20Francisco
+```
+
 ---
 
 ## Swagger / OpenAPI Documentation
@@ -890,6 +998,9 @@ Available endpoints in Swagger:
 
 ```text
 GET    /api/sport-events
+GET    /api/sport-events?page=0&size=10
+GET    /api/sport-events?team=Lakers
+GET    /api/sport-events?city=San%20Francisco
 GET    /api/sport-events/{sportEventId}
 POST   /api/bookings
 GET    /api/bookings/{bookingId}
@@ -1121,17 +1232,24 @@ http://localhost:8080/swagger-ui.html
 ## Example API Response
 
 ```text
-[
-  {
-    "id": 1,
-    "homeTeamName": "Los Angeles Lakers",
-    "awayTeamName": "Golden State Warriors",
-    "venueName": "Crypto.com Arena",
-    "startTime": "2026-08-06T05:29:27",
-    "ticketPrice": 89.99,
-    "capacity": 20000
-  }
-]
+{
+  "content": [
+    {
+      "id": 1,
+      "homeTeamName": "Los Angeles Lakers",
+      "awayTeamName": "Golden State Warriors",
+      "venueName": "Crypto.com Arena",
+      "startTime": "2026-08-15T13:09:53",
+      "ticketPrice": 89.99,
+      "capacity": 20000
+    }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 3,
+  "totalPages": 1,
+  "last": true
+}
 ```
 
 ---
@@ -1146,6 +1264,7 @@ http://localhost:8080/swagger-ui.html
 - `Team`
 - `Venue`
 - `BookingStatus`
+- `PagedResult`
 
 These classes represent the core business objects.
 
@@ -1213,6 +1332,7 @@ This layer connects the application to PostgreSQL.
 - `CreateBookingRequest`
 - `BookingResponse`
 - `SportEventResponse`
+- `PagedResponse`
 - `ErrorResponse`
 - `BookingWebMapper`
 - `SportEventWebMapper`
@@ -1263,6 +1383,9 @@ This project demonstrates:
 - DTO usage
 - Validation
 - Global exception handling
+- Pagination
+- Filtering
+- Paginated API responses
 - Unit testing with JUnit and Mockito
 - Manual endpoint testing
 - Swagger/OpenAPI documentation
@@ -1303,6 +1426,10 @@ Current status:
 - Docker Compose support added
 - PostgreSQL Docker container configured
 - Docker documentation added
+- Pagination for sport events added
+- Filtering by team added
+- Filtering by venue city added
+- Paginated response DTO added
 
 ---
 
@@ -1310,5 +1437,4 @@ Current status:
 
 - Add integration tests
 - Add authentication and authorization
-- Add pagination and filtering
 - Add more advanced booking rules
