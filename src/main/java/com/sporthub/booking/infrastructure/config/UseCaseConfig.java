@@ -1,11 +1,15 @@
 package com.sporthub.booking.infrastructure.config;
+
 import com.sporthub.booking.application.usecase.BookingUseCaseService;
 import com.sporthub.booking.application.usecase.SportEventUseCaseService;
+import com.sporthub.booking.application.usecase.VenueUseCaseService;
 import com.sporthub.booking.domain.port.out.BookingRepositoryPort;
 import com.sporthub.booking.domain.port.out.SportEventRepositoryPort;
 import com.sporthub.booking.domain.port.out.UserRepositoryPort;
+import com.sporthub.booking.domain.port.out.VenueRepositoryPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 @Configuration
 public class UseCaseConfig {
 
@@ -27,5 +31,12 @@ public class UseCaseConfig {
             SportEventRepositoryPort sportEventRepositoryPort
     ) {
         return new SportEventUseCaseService(sportEventRepositoryPort);
+    }
+
+    @Bean
+    public VenueUseCaseService venueUseCaseService(
+            VenueRepositoryPort venueRepositoryPort
+    ) {
+        return new VenueUseCaseService(venueRepositoryPort);
     }
 }
