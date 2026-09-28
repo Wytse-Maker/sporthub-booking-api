@@ -1435,6 +1435,7 @@ Current status:
 
 ## Next Possible Improvements
 
+
 - Add integration tests
 - Add authentication and authorization
 - Add more advanced booking rules

@@ -10,8 +10,11 @@ public final class SportEventWebMapper {
     public static SportEventResponse toResponse(SportEvent sportEvent) {
         return new SportEventResponse(
                 sportEvent.getId(),
+                sportEvent.getHomeTeam().getId(),
                 sportEvent.getHomeTeam().getName(),
+                sportEvent.getAwayTeam().getId(),
                 sportEvent.getAwayTeam().getName(),
+                sportEvent.getVenue().getId(),
                 sportEvent.getVenue().getName(),
                 sportEvent.getStartTime(),
                 sportEvent.getTicketPrice(),
