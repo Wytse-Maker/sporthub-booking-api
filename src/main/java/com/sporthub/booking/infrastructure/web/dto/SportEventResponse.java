@@ -4,8 +4,11 @@ import java.time.LocalDateTime;
 
 public record SportEventResponse(
         Long id,
+        Long homeTeamId,
         String homeTeamName,
+        Long awayTeamId,
         String awayTeamName,
+        Long venueId,
         String venueName,
         LocalDateTime startTime,
         BigDecimal ticketPrice,
