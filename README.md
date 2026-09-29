@@ -4,7 +4,7 @@
 
 SportHub Booking API is a backend portfolio project for booking tickets for NBA sport events.
 
-The project is built with Java, Spring Boot and PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing, API documentation, CI automation, Docker support, pagination, filtering and environment-based configuration.
+The project is built with Java, Spring Boot and PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing, API documentation, CI automation, Docker support, pagination, filtering, general search, frontend integration through CORS and environment-based configuration.
 
 ---
 
@@ -16,6 +16,7 @@ The goal of this project is to build a clean and maintainable backend API where 
 - View sport events with pagination
 - Filter sport events by team name
 - Filter sport events by venue city
+- Search sport events across teams, venue names and venue cities
 - Retrieve detailed information about a sport event
 - Navigate from a sport event to its related venue
 - Retrieve venue details
@@ -27,6 +28,7 @@ The goal of this project is to build a clean and maintainable backend API where 
 - Explore and test the API through Swagger/OpenAPI
 - Run automated tests through GitHub Actions CI
 - Run the application with Docker and PostgreSQL
+- Connect a browser-based frontend through configured CORS rules
 
 This project was created as a portfolio project to demonstrate junior backend developer skills.
 
@@ -261,6 +263,7 @@ It allows the application to:
 - Retrieve sport events with pagination
 - Filter sport events by team name
 - Filter sport events by venue city
+- Search sport events by home team, away team, venue name or venue city
 - Retrieve a sport event by ID
 - Throw a `ResourceNotFoundException` when a sport event does not exist
 
@@ -313,6 +316,7 @@ It includes:
 - Swagger/OpenAPI documentation
 - GitHub Actions workflow
 - Docker configuration
+- CORS configuration for frontend integration
 
 The outer part connects the outside world to the inner business logic.
 
@@ -438,13 +442,22 @@ By extending `JpaRepository`, Spring automatically provides methods such as:
 - `deleteById`
 - `count`
 
-`SpringDataSportEventRepository` also contains a custom query for pagination and filtering.
+`SpringDataSportEventRepository` also contains a custom query for pagination, filtering and general search.
 
 It supports filtering sport events by:
 
 - Home team name
 - Away team name
 - Venue city
+
+The general `search` parameter checks:
+
+- Home team name
+- Away team name
+- Venue name
+- Venue city
+
+The search is case-insensitive and supports partial matches.
 
 `SpringDataVenueRepository` provides the persistence functionality used to retrieve a venue by its ID.
 
@@ -722,6 +735,8 @@ GET /api/sport-events
 GET /api/sport-events?page=0&size=10
 GET /api/sport-events?team=Lakers
 GET /api/sport-events?city=San%20Francisco
+GET /api/sport-events?search=Lakers
+GET /api/sport-events?search=crypto
 GET /api/sport-events/{sportEventId}
 ```
 
@@ -742,6 +757,7 @@ The sport event list endpoint supports:
 - Pagination
 - Filtering by team name
 - Filtering by venue city
+- General search across teams, venue names and venue cities
 
 The related entity IDs allow frontend applications to navigate from a sport event to related data.
 
@@ -810,6 +826,7 @@ page
 size
 team
 city
+search
 ```
 
 Examples:
@@ -821,8 +838,49 @@ GET /api/sport-events?team=Lakers
 GET /api/sport-events?team=Warriors
 GET /api/sport-events?city=Los%20Angeles
 GET /api/sport-events?city=San%20Francisco
+GET /api/sport-events?search=Lakers
+GET /api/sport-events?search=crypto
+GET /api/sport-events?search=los%20angeles
 GET /api/sport-events?page=0&size=5&team=Warriors&city=San%20Francisco
 ```
+
+### General sport event search
+
+The `search` query parameter provides one frontend-friendly search field.
+
+Examples:
+
+```text
+GET /api/sport-events?search=Lakers
+GET /api/sport-events?search=Warriors
+GET /api/sport-events?search=crypto
+GET /api/sport-events?search=los%20angeles
+```
+
+The backend searches across:
+
+- Home team name
+- Away team name
+- Venue name
+- Venue city
+
+The search is case-insensitive and supports partial matches.
+
+For example:
+
+```text
+search=crypto
+```
+
+can match:
+
+```text
+Crypto.com Arena
+```
+
+This allows a frontend to use a single search bar instead of requiring separate search fields for teams and cities.
+
+---
 
 Example response:
 
@@ -1186,6 +1244,7 @@ Test coverage includes:
 - Handling missing bookings
 - Getting sport events
 - Getting paginated sport events
+- Passing the general search parameter through the sport event use case
 - Handling missing sport events
 - Getting an existing venue by ID
 - Handling a missing venue
@@ -1290,6 +1349,9 @@ http://localhost:8080/api/sport-events?team=Lakers
 http://localhost:8080/api/sport-events?team=Warriors
 http://localhost:8080/api/sport-events?city=Los%20Angeles
 http://localhost:8080/api/sport-events?city=San%20Francisco
+http://localhost:8080/api/sport-events?search=Lakers
+http://localhost:8080/api/sport-events?search=crypto
+http://localhost:8080/api/sport-events?search=los%20angeles
 ```
 
 Venue details can be tested using:
@@ -1337,6 +1399,8 @@ GET    /api/sport-events
 GET    /api/sport-events?page=0&size=10
 GET    /api/sport-events?team=Lakers
 GET    /api/sport-events?city=San%20Francisco
+GET    /api/sport-events?search=Lakers
+GET    /api/sport-events?search=crypto
 GET    /api/sport-events/{sportEventId}
 
 GET    /api/venues/{venueId}
@@ -1368,6 +1432,70 @@ The REST controllers also include Swagger annotations such as:
 ```
 
 These annotations improve the readability of the generated API documentation.
+
+---
+
+## Frontend Integration and CORS
+
+The API includes global CORS configuration so that a browser-based frontend, such as Expo Web, can communicate with the Spring Boot backend during local development.
+
+The configuration is located in:
+
+```text
+src/main/java/com/sporthub/booking/infrastructure/config/WebConfig.java
+```
+
+CORS rules are applied to:
+
+```text
+/api/**
+```
+
+The current local development origins are:
+
+```text
+http://localhost:8081
+http://localhost:8082
+```
+
+Allowed HTTP methods:
+
+```text
+GET
+POST
+PATCH
+OPTIONS
+```
+
+Request headers are allowed so the frontend can send requests such as JSON booking requests.
+
+Example development setup:
+
+```text
+Expo Web
+http://localhost:8081
+        ↓
+Spring Boot API
+http://localhost:8080
+```
+
+Because the frontend and backend use different ports, the browser treats them as different origins. The CORS configuration allows the frontend origin to access the API.
+
+CORS was manually verified with a request containing:
+
+```text
+Origin: http://localhost:8081
+```
+
+The API returned:
+
+```text
+Access-Control-Allow-Origin: http://localhost:8081
+```
+
+Browser preflight requests using `OPTIONS` are also supported for operations such as `POST /api/bookings`.
+
+The current CORS configuration is intended for local development. When the frontend is deployed, the production frontend origin should be added or used instead of the local development origins.
 
 ---
 
@@ -1723,8 +1851,9 @@ This layer exposes the API to clients.
 - `UseCaseConfig`
 - `DataSeeder`
 - `OpenApiConfig`
+- `WebConfig`
 
-This layer configures Spring Beans, seed data and API documentation.
+This layer configures Spring Beans, seed data, API documentation and CORS rules for frontend integration.
 
 ---
 
@@ -1774,7 +1903,9 @@ This project demonstrates:
 - Global exception handling
 - Pagination
 - Filtering
+- General search across related sport event data
 - Paginated API responses
+- CORS configuration for browser-based frontend integration
 - Unit testing with JUnit and Mockito
 - Mocking repository dependencies
 - Manual endpoint testing
@@ -1828,14 +1959,18 @@ Current status:
 - Venue web mapper added
 - Venue detail endpoint added
 - Venue use case unit tests added
+- General sport event search added
+- General search across home team, away team, venue name and venue city added
+- CORS configuration added for frontend integration
+- Local Expo Web origins allowed for API requests
+- CORS GET and preflight requests tested successfully
 
 ---
 
 ## Next Possible Improvements
 
-- Add a general search parameter for sport events
-- Add CORS configuration for frontend integration
 - Add integration and controller tests
 - Add authentication and authorization
 - Add more advanced booking rules
 - Deploy the API to a public environment
+- Replace local development CORS origins with the deployed frontend origin when the frontend is hosted
