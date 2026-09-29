@@ -1,6 +1,7 @@
 package com.sporthub.booking.application.usecase;
 
 import com.sporthub.booking.domain.exception.ResourceNotFoundException;
+import com.sporthub.booking.domain.model.PagedResult;
 import com.sporthub.booking.domain.model.SportEvent;
 import com.sporthub.booking.domain.port.out.SportEventRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,13 +15,13 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
-import com.sporthub.booking.domain.model.PagedResult;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SportEventUseCaseServiceTest {
+
     @Mock
     private SportEventRepositoryPort sportEventRepositoryPort;
 
@@ -28,7 +29,9 @@ class SportEventUseCaseServiceTest {
 
     @BeforeEach
     void setUp() {
-        sportEventUseCaseService = new SportEventUseCaseService(sportEventRepositoryPort);
+        sportEventUseCaseService = new SportEventUseCaseService(
+                sportEventRepositoryPort
+        );
     }
 
     @Test
@@ -39,9 +42,11 @@ class SportEventUseCaseServiceTest {
         SportEvent sportEvent2 = new SportEvent();
         sportEvent2.setId(2L);
 
-        when(sportEventRepositoryPort.findAll()).thenReturn(List.of(sportEvent1, sportEvent2));
+        when(sportEventRepositoryPort.findAll())
+                .thenReturn(List.of(sportEvent1, sportEvent2));
 
-        List<SportEvent> result = sportEventUseCaseService.getAllSportEvents();
+        List<SportEvent> result =
+                sportEventUseCaseService.getAllSportEvents();
 
         assertEquals(2, result.size());
         assertEquals(1L, result.get(0).getId());
@@ -53,24 +58,31 @@ class SportEventUseCaseServiceTest {
         SportEvent sportEvent = new SportEvent();
         sportEvent.setId(10L);
 
-        when(sportEventRepositoryPort.findById(10L)).thenReturn(Optional.of(sportEvent));
+        when(sportEventRepositoryPort.findById(10L))
+                .thenReturn(Optional.of(sportEvent));
 
-        SportEvent result = sportEventUseCaseService.getSportEventById(10L);
+        SportEvent result =
+                sportEventUseCaseService.getSportEventById(10L);
 
         assertEquals(10L, result.getId());
     }
 
     @Test
     void getSportEventByIdThrowsExceptionWhenSportEventDoesNotExist() {
-        when(sportEventRepositoryPort.findById(99L)).thenReturn(Optional.empty());
+        when(sportEventRepositoryPort.findById(99L))
+                .thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> sportEventUseCaseService.getSportEventById(99L)
         );
 
-        assertEquals("Sport event not found with id: 99", exception.getMessage());
+        assertEquals(
+                "Sport event not found with id: 99",
+                exception.getMessage()
+        );
     }
+
     @Test
     void getSportEventsReturnsPagedResult() {
         SportEvent sportEvent = new SportEvent();
@@ -85,15 +97,22 @@ class SportEventUseCaseServiceTest {
                 true
         );
 
-        when(sportEventRepositoryPort.findAll(0, 10, "Lakers", "Los Angeles"))
-                .thenReturn(pagedResult);
-
-        PagedResult<SportEvent> result = sportEventUseCaseService.getSportEvents(
+        when(sportEventRepositoryPort.findAll(
                 0,
                 10,
                 "Lakers",
-                "Los Angeles"
-        );
+                "Los Angeles",
+                "crypto"
+        )).thenReturn(pagedResult);
+
+        PagedResult<SportEvent> result =
+                sportEventUseCaseService.getSportEvents(
+                        0,
+                        10,
+                        "Lakers",
+                        "Los Angeles",
+                        "crypto"
+                );
 
         assertEquals(1, result.getContent().size());
         assertEquals(0, result.getPage());
@@ -102,7 +121,12 @@ class SportEventUseCaseServiceTest {
         assertEquals(1, result.getTotalPages());
         assertTrue(result.isLast());
 
-        verify(sportEventRepositoryPort).findAll(0, 10, "Lakers", "Los Angeles");
+        verify(sportEventRepositoryPort).findAll(
+                0,
+                10,
+                "Lakers",
+                "Los Angeles",
+                "crypto"
+        );
     }
-
 }

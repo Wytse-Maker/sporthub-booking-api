@@ -15,6 +15,7 @@ public interface GetSportEventsUseCase {
             Integer page,
             Integer size,
             String team,
-            String city
+            String city,
+            String search
     );
 }

@@ -23,7 +23,9 @@ public class SportEventPersistenceAdapter implements SportEventRepositoryPort {
 
     private final SpringDataSportEventRepository springDataSportEventRepository;
 
-    public SportEventPersistenceAdapter(SpringDataSportEventRepository springDataSportEventRepository) {
+    public SportEventPersistenceAdapter(
+            SpringDataSportEventRepository springDataSportEventRepository
+    ) {
         this.springDataSportEventRepository = springDataSportEventRepository;
     }
 
@@ -46,21 +48,30 @@ public class SportEventPersistenceAdapter implements SportEventRepositoryPort {
             Integer page,
             Integer size,
             String team,
-            String city
+            String city,
+            String search
     ) {
-        int safePage = page == null || page < 0 ? DEFAULT_PAGE : page;
-        int safeSize = size == null || size <= 0 ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
+        int safePage = page == null || page < 0
+                ? DEFAULT_PAGE
+                : page;
+
+        int safeSize = size == null || size <= 0
+                ? DEFAULT_SIZE
+                : Math.min(size, MAX_SIZE);
 
         String teamFilter = normalizeFilter(team);
         String cityFilter = normalizeFilter(city);
+        String searchFilter = normalizeFilter(search);
 
         Pageable pageable = PageRequest.of(safePage, safeSize);
 
-        Page<SportEventJpaEntity> sportEventPage = springDataSportEventRepository.findFilteredSportEvents(
-                teamFilter,
-                cityFilter,
-                pageable
-        );
+        Page<SportEventJpaEntity> sportEventPage =
+                springDataSportEventRepository.findFilteredSportEvents(
+                        teamFilter,
+                        cityFilter,
+                        searchFilter,
+                        pageable
+                );
 
         List<SportEvent> sportEvents = sportEventPage.getContent()
                 .stream()
@@ -80,7 +91,9 @@ public class SportEventPersistenceAdapter implements SportEventRepositoryPort {
     @Override
     public SportEvent save(SportEvent sportEvent) {
         return SportEventPersistenceMapper.toDomain(
-                springDataSportEventRepository.save(SportEventPersistenceMapper.toEntity(sportEvent))
+                springDataSportEventRepository.save(
+                        SportEventPersistenceMapper.toEntity(sportEvent)
+                )
         );
     }
 

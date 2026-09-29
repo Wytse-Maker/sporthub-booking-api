@@ -34,13 +34,15 @@ public class SportEventController {
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
             @RequestParam(required = false) String team,
-            @RequestParam(required = false) String city
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String search
     ) {
         PagedResult<SportEvent> sportEventPage = getSportEventsUseCase.getSportEvents(
                 page,
                 size,
                 team,
-                city
+                city,
+                search
         );
 
         return new PagedResponse<>(
