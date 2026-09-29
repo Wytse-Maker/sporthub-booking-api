@@ -4,7 +4,7 @@
 
 SportHub Booking API is a backend portfolio project for booking tickets for NBA sport events.
 
-The project is built with Java, Spring Boot, PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing, API documentation, CI automation, Docker support, pagination, filtering and environment based configuration.
+The project is built with Java, Spring Boot and PostgreSQL and follows a hexagonal architecture approach. The goal of this project is to demonstrate clean backend development, business logic, REST API design, database persistence, validation, exception handling, testing, API documentation, CI automation, Docker support, pagination, filtering and environment-based configuration.
 
 ---
 
@@ -16,6 +16,9 @@ The goal of this project is to build a clean and maintainable backend API where 
 - View sport events with pagination
 - Filter sport events by team name
 - Filter sport events by venue city
+- Retrieve detailed information about a sport event
+- Navigate from a sport event to its related venue
+- Retrieve venue details
 - Create bookings for sport events
 - Retrieve bookings
 - Retrieve bookings by user
@@ -112,6 +115,22 @@ A `Booking` contains:
 - Booking date
 - Booking status
 
+A `SportEvent` contains references to:
+
+- Home team
+- Away team
+- Venue
+- Start time
+- Ticket price
+- Capacity
+
+A `Venue` contains:
+
+- ID
+- Name
+- City
+- Capacity
+
 A `PagedResult` contains:
 
 - Content
@@ -139,6 +158,7 @@ Important input ports:
 - `CancelBookingUseCase`
 - `GetBookingUseCase`
 - `GetSportEventsUseCase`
+- `GetVenueUseCase`
 
 Example:
 
@@ -148,7 +168,15 @@ public interface CreateBookingUseCase {
 }
 ```
 
-This means that the application offers the ability to create a booking, without exposing how that booking is created internally.
+The venue use case provides:
+
+```text
+public interface GetVenueUseCase {
+    Venue getVenueById(Long venueId);
+}
+```
+
+Input ports allow the web layer to use application functionality without depending directly on concrete service implementations.
 
 ---
 
@@ -156,13 +184,14 @@ This means that the application offers the ability to create a booking, without 
 
 Output ports define what the application needs from the outside world.
 
-They are interfaces used by the application layer to communicate with persistence, without knowing the technical database implementation.
+They are interfaces used by the application layer to communicate with persistence without knowing the technical database implementation.
 
 Important output ports:
 
 - `BookingRepositoryPort`
 - `SportEventRepositoryPort`
 - `UserRepositoryPort`
+- `VenueRepositoryPort`
 
 Example:
 
@@ -179,18 +208,28 @@ public interface BookingRepositoryPort {
 }
 ```
 
+The venue repository port currently contains only the functionality required by the venue detail use case:
+
+```text
+public interface VenueRepositoryPort {
+
+    Optional<Venue> findById(Long venueId);
+}
+```
+
 The application layer depends on these interfaces, not directly on Spring Data JPA or PostgreSQL.
 
 ---
 
 ## Application Services
 
-Application services contain the business logic.
+Application services contain the application logic and coordinate the domain with repository ports.
 
 Important application services:
 
 - `BookingUseCaseService`
 - `SportEventUseCaseService`
+- `VenueUseCaseService`
 
 ### BookingUseCaseService
 
@@ -225,6 +264,34 @@ It allows the application to:
 - Retrieve a sport event by ID
 - Throw a `ResourceNotFoundException` when a sport event does not exist
 
+### VenueUseCaseService
+
+`VenueUseCaseService` implements:
+
+- `GetVenueUseCase`
+
+It allows the application to retrieve a venue by ID.
+
+The service uses `VenueRepositoryPort` instead of directly depending on Spring Data JPA.
+
+Example flow:
+
+```text
+getVenueById(1)
+→ VenueRepositoryPort.findById(1)
+→ Venue returned
+```
+
+If the venue does not exist:
+
+```text
+getVenueById(999)
+→ Optional.empty()
+→ ResourceNotFoundException
+```
+
+This exception is later converted into a `404 Not Found` response by the global exception handler.
+
 ---
 
 ## Outer Part
@@ -251,9 +318,9 @@ The outer part connects the outside world to the inner business logic.
 
 ---
 
-## Request Flow Example
+## Request Flow Examples
 
-Example flow for creating a booking:
+### Creating a booking
 
 ```text
 Client
@@ -267,7 +334,7 @@ Client
 → PostgreSQL
 ```
 
-Example flow for retrieving paginated and filtered sport events:
+### Retrieving paginated and filtered sport events
 
 ```text
 Client
@@ -281,7 +348,23 @@ Client
 → PostgreSQL
 ```
 
-This keeps the controller separated from the database and keeps the business logic clean.
+### Retrieving venue details
+
+```text
+Client
+→ GET /api/venues/1
+→ VenueController
+→ GetVenueUseCase
+→ VenueUseCaseService
+→ VenueRepositoryPort
+→ VenuePersistenceAdapter
+→ SpringDataVenueRepository
+→ PostgreSQL
+```
+
+The domain `Venue` is then converted into a `VenueResponse` by `VenueWebMapper`.
+
+This keeps controllers separated from database technology and keeps the application layer dependent on abstractions.
 
 ---
 
@@ -363,6 +446,8 @@ It supports filtering sport events by:
 - Away team name
 - Venue city
 
+`SpringDataVenueRepository` provides the persistence functionality used to retrieve a venue by its ID.
+
 ---
 
 ### Persistence Mappers
@@ -382,6 +467,7 @@ Example:
 ```text
 BookingJpaEntity ↔ Booking
 SportEventJpaEntity ↔ SportEvent
+VenueJpaEntity ↔ Venue
 UserJpaEntity ↔ User
 ```
 
@@ -398,8 +484,9 @@ Important adapters:
 - `UserPersistenceAdapter`
 - `SportEventPersistenceAdapter`
 - `BookingPersistenceAdapter`
+- `VenuePersistenceAdapter`
 
-Example flow:
+Example booking flow:
 
 ```text
 BookingRepositoryPort
@@ -408,7 +495,16 @@ BookingRepositoryPort
 → PostgreSQL
 ```
 
-This allows the application layer to depend on ports while the infrastructure layer handles the technical implementation.
+Example venue flow:
+
+```text
+VenueRepositoryPort
+→ VenuePersistenceAdapter
+→ SpringDataVenueRepository
+→ PostgreSQL
+```
+
+`VenuePersistenceAdapter` retrieves a `VenueJpaEntity` and uses `VenuePersistenceMapper` to convert it into the domain `Venue`.
 
 `SportEventPersistenceAdapter` also converts Spring Data pagination results into the domain-safe `PagedResult`.
 
@@ -433,6 +529,7 @@ Important controllers:
 
 - `SportEventController`
 - `BookingController`
+- `VenueController`
 
 These controllers use input ports instead of concrete service classes.
 
@@ -440,6 +537,12 @@ Example:
 
 ```text
 private final CreateBookingUseCase createBookingUseCase;
+```
+
+The venue controller uses:
+
+```text
+private final GetVenueUseCase getVenueUseCase;
 ```
 
 This keeps the web layer dependent on abstractions rather than concrete implementations.
@@ -457,12 +560,58 @@ Important DTOs:
 - `CreateBookingRequest`
 - `BookingResponse`
 - `SportEventResponse`
+- `VenueResponse`
 - `PagedResponse`
 - `ErrorResponse`
 
 DTOs help prevent exposing the internal domain model directly through the API.
 
 `PagedResponse` is used to return paginated API responses to clients.
+
+`VenueResponse` contains:
+
+```text
+id
+name
+city
+capacity
+```
+
+---
+
+### SportEvent Navigation IDs
+
+`SportEventResponse` includes both display information and IDs for related entities.
+
+Example:
+
+```text
+id
+homeTeamId
+homeTeamName
+awayTeamId
+awayTeamName
+venueId
+venueName
+startTime
+ticketPrice
+capacity
+```
+
+The names are useful for displaying information to the user.
+
+The IDs allow a frontend application to navigate to related resources.
+
+For example:
+
+```text
+Sport event
+→ venueId = 1
+→ GET /api/venues/1
+→ Venue detail screen
+```
+
+This avoids having to identify related resources by name.
 
 ---
 
@@ -474,12 +623,31 @@ Important web mappers:
 
 - `BookingWebMapper`
 - `SportEventWebMapper`
+- `VenueWebMapper`
 
-Example:
+Examples:
 
 ```text
 Booking → BookingResponse
 SportEvent → SportEventResponse
+Venue → VenueResponse
+```
+
+`VenueWebMapper` converts:
+
+```text
+Venue
+↓
+VenueResponse
+```
+
+with:
+
+```text
+id
+name
+city
+capacity
 ```
 
 ---
@@ -522,6 +690,25 @@ src/main/java/com/sporthub/booking/infrastructure/config/UseCaseConfig.java
 
 This keeps the application layer independent from Spring annotations.
 
+The configured use case services include:
+
+- `BookingUseCaseService`
+- `SportEventUseCaseService`
+- `VenueUseCaseService`
+
+Example:
+
+```text
+@Bean
+public VenueUseCaseService venueUseCaseService(
+        VenueRepositoryPort venueRepositoryPort
+) {
+    return new VenueUseCaseService(venueRepositoryPort);
+}
+```
+
+Spring injects the `VenuePersistenceAdapter` as the implementation of `VenueRepositoryPort`.
+
 ---
 
 ## Main Features
@@ -540,9 +727,12 @@ GET /api/sport-events/{sportEventId}
 
 These endpoints return sport event data such as:
 
-- Home team
-- Away team
-- Venue
+- Home team ID
+- Home team name
+- Away team ID
+- Away team name
+- Venue ID
+- Venue name
 - Start time
 - Ticket price
 - Capacity
@@ -552,6 +742,39 @@ The sport event list endpoint supports:
 - Pagination
 - Filtering by team name
 - Filtering by venue city
+
+The related entity IDs allow frontend applications to navigate from a sport event to related data.
+
+---
+
+### Venues
+
+Available endpoint:
+
+```text
+GET /api/venues/{venueId}
+```
+
+This endpoint returns detailed information about a venue.
+
+Example:
+
+```text
+GET /api/venues/1
+```
+
+Response:
+
+```text
+{
+  "id": 1,
+  "name": "Crypto.com Arena",
+  "city": "Los Angeles",
+  "capacity": 20000
+}
+```
+
+This endpoint can be used by frontend applications to provide a dedicated venue detail screen.
 
 ---
 
@@ -608,8 +831,11 @@ Example response:
   "content": [
     {
       "id": 1,
+      "homeTeamId": 1,
       "homeTeamName": "Los Angeles Lakers",
+      "awayTeamId": 2,
       "awayTeamName": "Golden State Warriors",
+      "venueId": 1,
       "venueName": "Crypto.com Arena",
       "startTime": "2026-08-15T13:09:53",
       "ticketPrice": 89.99,
@@ -633,6 +859,52 @@ GET /api/sport-events/{sportEventId}
 ```
 
 Returns a single sport event by ID.
+
+The response also contains the IDs of the home team, away team and venue.
+
+---
+
+### Get venue by ID
+
+```text
+GET /api/venues/{venueId}
+```
+
+Returns a venue by ID.
+
+Example:
+
+```text
+GET /api/venues/1
+```
+
+Response:
+
+```text
+{
+  "id": 1,
+  "name": "Crypto.com Arena",
+  "city": "Los Angeles",
+  "capacity": 20000
+}
+```
+
+If the venue does not exist, the API returns:
+
+```text
+404 Not Found
+```
+
+Example error:
+
+```text
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Venue not found with id: 999",
+  "timestamp": "..."
+}
+```
 
 ---
 
@@ -756,11 +1028,13 @@ Important annotations:
 @ExceptionHandler
 ```
 
+The same `ResourceNotFoundException` mechanism is used for missing bookings, sport events and venues.
+
 ---
 
 ### 404 Not Found
 
-When a booking does not exist:
+Example when a booking does not exist:
 
 ```text
 {
@@ -768,6 +1042,17 @@ When a booking does not exist:
   "error": "Not Found",
   "message": "Booking not found with id: 999",
   "timestamp": "2026-07-24T13:00:00"
+}
+```
+
+Example when a venue does not exist:
+
+```text
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Venue not found with id: 999",
+  "timestamp": "..."
 }
 ```
 
@@ -870,6 +1155,11 @@ Seeded data includes:
 - NBA venues
 - Sport events
 
+Example seeded venues:
+
+- Crypto.com Arena
+- Chase Center
+
 Example seeded sport events:
 
 - Los Angeles Lakers vs Golden State Warriors
@@ -897,6 +1187,32 @@ Test coverage includes:
 - Getting sport events
 - Getting paginated sport events
 - Handling missing sport events
+- Getting an existing venue by ID
+- Handling a missing venue
+
+---
+
+### VenueUseCaseService Tests
+
+`VenueUseCaseServiceTest` contains tests for both the successful and unsuccessful lookup flows.
+
+Successful flow:
+
+```text
+VenueRepositoryPort.findById(1)
+→ Optional containing Venue
+→ VenueUseCaseService returns Venue
+```
+
+Missing venue flow:
+
+```text
+VenueRepositoryPort.findById(999)
+→ Optional.empty()
+→ ResourceNotFoundException
+```
+
+Mockito is used so the service can be tested without connecting to PostgreSQL.
 
 ---
 
@@ -924,7 +1240,14 @@ Example:
 private BookingRepositoryPort bookingRepositoryPort;
 ```
 
-Mockito allows testing the application service without using the real database.
+Venue tests use:
+
+```text
+@Mock
+private VenueRepositoryPort venueRepositoryPort;
+```
+
+Mockito allows testing application services without using the real database.
 
 ---
 
@@ -936,7 +1259,7 @@ The file below contains example API requests:
 src/test/http/sporthub-api.http
 ```
 
-Example request:
+Example booking request:
 
 ```text
 POST http://localhost:8080/api/bookings
@@ -969,6 +1292,18 @@ http://localhost:8080/api/sport-events?city=Los%20Angeles
 http://localhost:8080/api/sport-events?city=San%20Francisco
 ```
 
+Venue details can be tested using:
+
+```text
+http://localhost:8080/api/venues/1
+```
+
+A missing venue can be tested using:
+
+```text
+http://localhost:8080/api/venues/999
+```
+
 ---
 
 ## Swagger / OpenAPI Documentation
@@ -992,9 +1327,10 @@ http://localhost:8080/swagger-ui/index.html
 Swagger groups the API endpoints into:
 
 - Sport Events
+- Venues
 - Bookings
 
-Available endpoints in Swagger:
+Available endpoints in Swagger include:
 
 ```text
 GET    /api/sport-events
@@ -1002,6 +1338,9 @@ GET    /api/sport-events?page=0&size=10
 GET    /api/sport-events?team=Lakers
 GET    /api/sport-events?city=San%20Francisco
 GET    /api/sport-events/{sportEventId}
+
+GET    /api/venues/{venueId}
+
 POST   /api/bookings
 GET    /api/bookings/{bookingId}
 GET    /api/bookings/users/{userId}
@@ -1056,6 +1395,8 @@ Run Maven tests
 ```
 
 This helps ensure that changes are tested before they are merged into the main branch.
+
+The venue use case tests are also automatically executed by this workflow.
 
 ---
 
@@ -1197,6 +1538,12 @@ SPRING_JPA_HIBERNATE_DDL_AUTO
 mvn test
 ```
 
+For a clean build and test run:
+
+```text
+mvn clean test
+```
+
 ---
 
 ### 5. Start the application
@@ -1215,13 +1562,19 @@ SporthubBookingApiApplication.java
 
 ### 6. Test the API
 
-Open in the browser:
+Sport events:
 
 ```text
 http://localhost:8080/api/sport-events
 ```
 
-Or open Swagger UI:
+Venue details:
+
+```text
+http://localhost:8080/api/venues/1
+```
+
+Swagger UI:
 
 ```text
 http://localhost:8080/swagger-ui.html
@@ -1229,15 +1582,18 @@ http://localhost:8080/swagger-ui.html
 
 ---
 
-## Example API Response
+## Example Sport Event API Response
 
 ```text
 {
   "content": [
     {
       "id": 1,
+      "homeTeamId": 1,
       "homeTeamName": "Los Angeles Lakers",
+      "awayTeamId": 2,
       "awayTeamName": "Golden State Warriors",
+      "venueId": 1,
       "venueName": "Crypto.com Arena",
       "startTime": "2026-08-15T13:09:53",
       "ticketPrice": 89.99,
@@ -1249,6 +1605,19 @@ http://localhost:8080/swagger-ui.html
   "totalElements": 3,
   "totalPages": 1,
   "last": true
+}
+```
+
+---
+
+## Example Venue API Response
+
+```text
+{
+  "id": 1,
+  "name": "Crypto.com Arena",
+  "city": "Los Angeles",
+  "capacity": 20000
 }
 ```
 
@@ -1276,6 +1645,7 @@ These classes represent the core business objects.
 - `CancelBookingUseCase`
 - `GetBookingUseCase`
 - `GetSportEventsUseCase`
+- `GetVenueUseCase`
 
 These interfaces define what the application can do.
 
@@ -1286,6 +1656,7 @@ These interfaces define what the application can do.
 - `BookingRepositoryPort`
 - `SportEventRepositoryPort`
 - `UserRepositoryPort`
+- `VenueRepositoryPort`
 
 These interfaces define what the application needs from persistence without depending on a database implementation.
 
@@ -1295,8 +1666,9 @@ These interfaces define what the application needs from persistence without depe
 
 - `BookingUseCaseService`
 - `SportEventUseCaseService`
+- `VenueUseCaseService`
 
-These classes contain the business logic.
+These classes contain the application logic.
 
 ---
 
@@ -1320,6 +1692,7 @@ These classes contain the business logic.
 - `UserPersistenceAdapter`
 - `SportEventPersistenceAdapter`
 - `BookingPersistenceAdapter`
+- `VenuePersistenceAdapter`
 
 This layer connects the application to PostgreSQL.
 
@@ -1329,13 +1702,16 @@ This layer connects the application to PostgreSQL.
 
 - `SportEventController`
 - `BookingController`
+- `VenueController`
 - `CreateBookingRequest`
 - `BookingResponse`
 - `SportEventResponse`
+- `VenueResponse`
 - `PagedResponse`
 - `ErrorResponse`
 - `BookingWebMapper`
 - `SportEventWebMapper`
+- `VenueWebMapper`
 - `GlobalExceptionHandler`
 
 This layer exposes the API to clients.
@@ -1349,6 +1725,16 @@ This layer exposes the API to clients.
 - `OpenApiConfig`
 
 This layer configures Spring Beans, seed data and API documentation.
+
+---
+
+### Tests
+
+Important application service tests include:
+
+- `BookingUseCaseServiceTest`
+- `SportEventUseCaseServiceTest`
+- `VenueUseCaseServiceTest`
 
 ---
 
@@ -1380,13 +1766,17 @@ This project demonstrates:
 - Business rule implementation
 - PostgreSQL database integration
 - JPA and Hibernate
+- Ports and adapters
 - DTO usage
+- Web and persistence mapping
+- Related-resource navigation using IDs
 - Validation
 - Global exception handling
 - Pagination
 - Filtering
 - Paginated API responses
 - Unit testing with JUnit and Mockito
+- Mocking repository dependencies
 - Manual endpoint testing
 - Swagger/OpenAPI documentation
 - GitHub workflow with feature branches and pull requests
@@ -1430,12 +1820,22 @@ Current status:
 - Filtering by team added
 - Filtering by venue city added
 - Paginated response DTO added
+- Navigation IDs added to sport event responses
+- Venue repository port added
+- Venue use case added
+- Venue persistence adapter added
+- Venue response DTO added
+- Venue web mapper added
+- Venue detail endpoint added
+- Venue use case unit tests added
 
 ---
 
 ## Next Possible Improvements
 
-
-- Add integration tests
+- Add a general search parameter for sport events
+- Add CORS configuration for frontend integration
+- Add integration and controller tests
 - Add authentication and authorization
 - Add more advanced booking rules
+- Deploy the API to a public environment
