@@ -29,9 +29,10 @@ public class SportEventUseCaseService implements GetSportEventsUseCase {
             Integer page,
             Integer size,
             String team,
-            String city
+            String city,
+            String search
     ) {
-        return sportEventRepositoryPort.findAll(page, size, team, city);
+        return sportEventRepositoryPort.findAll(page, size, team, city, search);
     }
 }
 

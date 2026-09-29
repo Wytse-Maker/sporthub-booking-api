@@ -12,16 +12,28 @@ public interface SpringDataSportEventRepository extends JpaRepository<SportEvent
     @Query("""
             SELECT sportEvent
             FROM SportEventJpaEntity sportEvent
-            WHERE (:team = ''
+            WHERE (
+                :team = ''
                 OR LOWER(sportEvent.homeTeam.name) LIKE LOWER(CONCAT('%', :team, '%'))
-                OR LOWER(sportEvent.awayTeam.name) LIKE LOWER(CONCAT('%', :team, '%')))
-            AND (:city = ''
-                OR LOWER(sportEvent.venue.city) LIKE LOWER(CONCAT('%', :city, '%')))
+                OR LOWER(sportEvent.awayTeam.name) LIKE LOWER(CONCAT('%', :team, '%'))
+            )
+            AND (
+                :city = ''
+                OR LOWER(sportEvent.venue.city) LIKE LOWER(CONCAT('%', :city, '%'))
+            )
+            AND (
+                :search = ''
+                OR LOWER(sportEvent.homeTeam.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(sportEvent.awayTeam.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(sportEvent.venue.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(sportEvent.venue.city) LIKE LOWER(CONCAT('%', :search, '%'))
+            )
             ORDER BY sportEvent.startTime ASC
             """)
     Page<SportEventJpaEntity> findFilteredSportEvents(
             @Param("team") String team,
             @Param("city") String city,
+            @Param("search") String search,
             Pageable pageable
     );
 }
