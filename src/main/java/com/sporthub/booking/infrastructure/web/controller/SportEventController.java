@@ -3,8 +3,11 @@ package com.sporthub.booking.infrastructure.web.controller;
 import com.sporthub.booking.domain.model.PagedResult;
 import com.sporthub.booking.domain.model.SportEvent;
 import com.sporthub.booking.domain.port.in.GetSportEventsUseCase;
+import com.sporthub.booking.domain.port.in.GetEventAvailabilityUseCase;
+import com.sporthub.booking.infrastructure.web.dto.EventAvailabilityResponse;
 import com.sporthub.booking.infrastructure.web.dto.PagedResponse;
 import com.sporthub.booking.infrastructure.web.dto.SportEventResponse;
+import com.sporthub.booking.infrastructure.web.mapper.EventAvailabilityWebMapper;
 import com.sporthub.booking.infrastructure.web.mapper.SportEventWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,9 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class SportEventController {
 
     private final GetSportEventsUseCase getSportEventsUseCase;
+    private final GetEventAvailabilityUseCase getEventAvailabilityUseCase;
 
-    public SportEventController(GetSportEventsUseCase getSportEventsUseCase) {
+    public SportEventController(GetSportEventsUseCase getSportEventsUseCase,
+                                GetEventAvailabilityUseCase getEventAvailabilityUseCase) {
         this.getSportEventsUseCase = getSportEventsUseCase;
+        this.getEventAvailabilityUseCase = getEventAvailabilityUseCase;
     }
 
     @Operation(
@@ -68,4 +74,16 @@ public class SportEventController {
                 getSportEventsUseCase.getSportEventById(sportEventId)
         );
     }
+
+    @Operation(
+            summary = "Get availability of a sport event by Id ",
+            description = "returns availability of a single sport event"
+    )
+    @GetMapping("/{sportEventId}/availability")
+    public EventAvailabilityResponse getEventAvailability(@PathVariable Long sportEventId) {
+        return EventAvailabilityWebMapper.toResponse(
+                getEventAvailabilityUseCase.getEventAvailability(sportEventId)
+        );
+    }
+
 }

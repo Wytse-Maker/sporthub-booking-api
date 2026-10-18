@@ -3,6 +3,7 @@ package com.sporthub.booking.infrastructure.config;
 import com.sporthub.booking.application.usecase.BookingUseCaseService;
 import com.sporthub.booking.application.usecase.SportEventUseCaseService;
 import com.sporthub.booking.application.usecase.VenueUseCaseService;
+import com.sporthub.booking.application.usecase.EventAvailabilityUseCaseService;
 import com.sporthub.booking.domain.port.out.BookingRepositoryPort;
 import com.sporthub.booking.domain.port.out.SportEventRepositoryPort;
 import com.sporthub.booking.domain.port.out.UserRepositoryPort;
@@ -38,5 +39,13 @@ public class UseCaseConfig {
             VenueRepositoryPort venueRepositoryPort
     ) {
         return new VenueUseCaseService(venueRepositoryPort);
+    }
+
+    @Bean
+    public EventAvailabilityUseCaseService eventAvailabilityUseCaseService(
+            BookingRepositoryPort bookingRepositoryPort,
+            SportEventRepositoryPort sportEventRepositoryPort
+    ) {
+        return new EventAvailabilityUseCaseService(sportEventRepositoryPort, bookingRepositoryPort);
     }
 }
