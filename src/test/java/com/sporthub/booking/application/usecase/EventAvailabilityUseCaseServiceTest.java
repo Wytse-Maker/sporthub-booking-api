@@ -122,4 +122,56 @@ class EventAvailabilityUseCaseServiceTest {
         assertTrue(result.isSoldOut());
 
     }
-}
+
+    @Test
+    void shouldCalculateOccupancyPercentageCorrectly(){
+        SportEvent sportEvent=new SportEvent();
+        sportEvent.setCapacity(20);
+        sportEvent.setId(10L);
+        Booking booking1=new Booking();
+        booking1.setNumberOfTickets(7);
+
+        when(sportEventRepositoryPort.findById(10L)).thenReturn(Optional.of(sportEvent));
+        when(bookingRepositoryPort.findActiveBookingsBySportEventId(10L)).thenReturn(List.of(booking1));
+
+        EventAvailability result= eventAvailabilityUseCaseService.getEventAvailability(10L);
+
+        assertEquals(20, result.getCapacity());
+        assertEquals(7, result.getReservedTickets());
+        assertEquals(35, result.getOccupancyPercentage());
+    }
+
+    @Test
+    void shouldCalculateOccupancyPercentageCorrectlyWithZeroCapacityAndZeroReservedTickets(){
+        SportEvent sportEvent=new SportEvent();
+        sportEvent.setCapacity(0);
+        sportEvent.setId(10L);
+
+
+        when(sportEventRepositoryPort.findById(10L)).thenReturn(Optional.of(sportEvent));
+        when(bookingRepositoryPort.findActiveBookingsBySportEventId(10L)).thenReturn(List.of());
+
+        EventAvailability result= eventAvailabilityUseCaseService.getEventAvailability(10L);
+
+        assertEquals(0, result.getCapacity());
+        assertEquals(0, result.getReservedTickets());
+        assertEquals(0, result.getOccupancyPercentage());
+    }
+    @Test
+    void shouldRoundDownOccupancyPercentage(){
+        SportEvent sportEvent=new SportEvent();
+        sportEvent.setCapacity(3);
+        sportEvent.setId(10L);
+        Booking booking1=new Booking();
+        booking1.setNumberOfTickets(1);
+
+        when(sportEventRepositoryPort.findById(10L)).thenReturn(Optional.of(sportEvent));
+        when(bookingRepositoryPort.findActiveBookingsBySportEventId(10L)).thenReturn(List.of(booking1));
+
+        EventAvailability result= eventAvailabilityUseCaseService.getEventAvailability(10L);
+
+        assertEquals(3, result.getCapacity());
+        assertEquals(1, result.getReservedTickets());
+        assertEquals(33, result.getOccupancyPercentage());
+    }
+    }

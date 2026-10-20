@@ -6,13 +6,21 @@ public class EventAvailability {
     private final int reservedTickets;
     private final int availableTickets;
     private final boolean soldOut;
+    private final int occupancyPercentage;
 
-    public EventAvailability(Long sportEventId, int capacity, int reservedTickets, int availableTickets, boolean soldOut){
-        this.sportEventId=sportEventId;
-        this.capacity=capacity;
-        this.reservedTickets=reservedTickets;
-        this.availableTickets=availableTickets;
-        this.soldOut=soldOut;
+
+    public EventAvailability(Long sportEventId,
+                             int capacity,
+                             int reservedTickets,
+                             int availableTickets,
+                             boolean soldOut,
+                             int occupancyPercentage) {
+        this.sportEventId = sportEventId;
+        this.capacity = capacity;
+        this.reservedTickets = reservedTickets;
+        this.availableTickets = availableTickets;
+        this.soldOut = soldOut;
+        this.occupancyPercentage = occupancyPercentage;
     }
 
     public Long getSportEventId() {
@@ -33,5 +41,9 @@ public class EventAvailability {
 
     public boolean isSoldOut() {
         return soldOut;
+    }
+
+    public int getOccupancyPercentage() {
+        return occupancyPercentage;
     }
 }
