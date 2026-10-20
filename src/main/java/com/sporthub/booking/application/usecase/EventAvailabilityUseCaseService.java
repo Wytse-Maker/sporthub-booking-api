@@ -11,9 +11,6 @@ import com.sporthub.booking.domain.port.out.SportEventRepositoryPort;
 import java.util.List;
 
 
-
-
-
 public class EventAvailabilityUseCaseService implements GetEventAvailabilityUseCase {
     private final SportEventRepositoryPort sportEventRepositoryPort;
     private final BookingRepositoryPort bookingRepositoryPort;
@@ -23,20 +20,36 @@ public class EventAvailabilityUseCaseService implements GetEventAvailabilityUseC
         this.bookingRepositoryPort = bookingRepositoryPort;
     }
 
+    private int getOccpancyPercentage(int capacity, int reservedTickets) {
+        int occupancyPercentage = 0;
+        if (capacity == 0) {
+            return occupancyPercentage;
+        }
+        double percentage = (double) reservedTickets / capacity * 100;
+        occupancyPercentage = (int) percentage;
+        return occupancyPercentage;
+    }
+
     @Override
     public EventAvailability getEventAvailability(Long sportEventId) {
         SportEvent sportEvent = sportEventRepositoryPort.findById(sportEventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sport event not found with id: " + sportEventId));
 
-        List<Booking>activeBookings=bookingRepositoryPort.findActiveBookingsBySportEventId(sportEventId);
+        List<Booking> activeBookings = bookingRepositoryPort.findActiveBookingsBySportEventId(sportEventId);
 
-        int reservedTickets=activeBookings.stream().mapToInt(Booking::getNumberOfTickets).sum();
+        int reservedTickets = activeBookings.stream().mapToInt(Booking::getNumberOfTickets).sum();
 
-        int capacity=sportEvent.getCapacity();
-        int availableTickets=capacity-reservedTickets;
+        int capacity = sportEvent.getCapacity();
+
+
+        int availableTickets = capacity - reservedTickets;
+
+        int occupancyPercentage = getOccpancyPercentage(capacity, reservedTickets);
+
         boolean soldOut = availableTickets <= 0;
 
-        return new EventAvailability(sportEventId,capacity,reservedTickets,availableTickets,soldOut);
+
+        return new EventAvailability(sportEventId, capacity, reservedTickets, availableTickets, soldOut, occupancyPercentage );
     }
 
 }

@@ -9,6 +9,6 @@ public class EventAvailabilityWebMapper {
     public static EventAvailabilityResponse toResponse(EventAvailability eventAvailability){
         return new EventAvailabilityResponse(eventAvailability.getSportEventId(), eventAvailability.getCapacity(),
                 eventAvailability.getReservedTickets(), eventAvailability.getAvailableTickets(),
-                eventAvailability.isSoldOut());
+                eventAvailability.isSoldOut(), eventAvailability.getOccupancyPercentage());
     }
 }
