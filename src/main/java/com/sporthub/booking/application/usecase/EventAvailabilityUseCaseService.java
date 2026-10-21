@@ -20,14 +20,14 @@ public class EventAvailabilityUseCaseService implements GetEventAvailabilityUseC
         this.bookingRepositoryPort = bookingRepositoryPort;
     }
 
-    private int getOccpancyPercentage(int capacity, int reservedTickets) {
-        int occupancyPercentage = 0;
+    private int calculateOccupancyPercentage(int capacity, int reservedTickets) {
         if (capacity == 0) {
-            return occupancyPercentage;
+            return 0;
         }
+
         double percentage = (double) reservedTickets / capacity * 100;
-        occupancyPercentage = (int) percentage;
-        return occupancyPercentage;
+
+        return (int) percentage;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class EventAvailabilityUseCaseService implements GetEventAvailabilityUseC
 
         int availableTickets = capacity - reservedTickets;
 
-        int occupancyPercentage = getOccpancyPercentage(capacity, reservedTickets);
+        int occupancyPercentage = calculateOccupancyPercentage(capacity, reservedTickets);
 
         boolean soldOut = availableTickets <= 0;
 
