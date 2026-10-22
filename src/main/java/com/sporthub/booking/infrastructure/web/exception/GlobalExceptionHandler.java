@@ -1,6 +1,7 @@
 package com.sporthub.booking.infrastructure.web.exception;
 
 import com.sporthub.booking.domain.exception.BookingValidationException;
+import com.sporthub.booking.domain.exception.OverbookingException;
 import com.sporthub.booking.domain.exception.ResourceNotFoundException;
 import com.sporthub.booking.infrastructure.web.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,10 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
 
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message);
+    }
+    @ExceptionHandler(OverbookingException.class)
+    public ResponseEntity<ErrorResponse>handleOverbookingException(OverbookingException exception){
+        return buildErrorResponse(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message) {
