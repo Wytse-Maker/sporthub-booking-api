@@ -1,5 +1,6 @@
 package com.sporthub.booking.application.usecase;
 
+import com.sporthub.booking.domain.exception.OverbookingException;
 import com.sporthub.booking.domain.exception.ResourceNotFoundException;
 import com.sporthub.booking.domain.model.Booking;
 import com.sporthub.booking.domain.model.EventAvailability;
@@ -41,7 +42,11 @@ public class EventAvailabilityUseCaseService implements GetEventAvailabilityUseC
 
         int capacity = sportEvent.getCapacity();
 
-
+        if (reservedTickets > capacity) {
+            throw new OverbookingException( "Event " + sportEventId
+                    + ": reserved tickets (" + reservedTickets
+                    + ") exceed capacity (" + capacity + ")");
+        }
         int availableTickets = capacity - reservedTickets;
 
         int occupancyPercentage = calculateOccupancyPercentage(capacity, reservedTickets);
@@ -49,7 +54,7 @@ public class EventAvailabilityUseCaseService implements GetEventAvailabilityUseC
         boolean soldOut = availableTickets <= 0;
 
 
-        return new EventAvailability(sportEventId, capacity, reservedTickets, availableTickets, soldOut, occupancyPercentage );
+        return new EventAvailability(sportEventId, capacity, reservedTickets, availableTickets, soldOut, occupancyPercentage);
     }
 
 }
