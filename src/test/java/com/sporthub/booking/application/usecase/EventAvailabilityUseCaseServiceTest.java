@@ -51,17 +51,19 @@ class EventAvailabilityUseCaseServiceTest {
         booking2.setNumberOfTickets(3);
         Booking booking3 = new Booking();
         booking3.setNumberOfTickets(4);
+        booking3.setStatus(BookingStatus.CANCELLED);
 
         when(sportEventRepositoryPort.findById(10L)).thenReturn(Optional.of(sportEvent));
-        when(bookingRepositoryPort.findActiveBookingsBySportEventId(10L)).thenReturn(List.of(booking1, booking2, booking3));
+        when(bookingRepositoryPort.findActiveBookingsBySportEventId(10L)).thenReturn(List.of(booking1, booking2));
 
         EventAvailability result = eventAvailabilityUseCaseService.getEventAvailability(10L);
 
         assertEquals(10L, result.getSportEventId());
         assertEquals(100, result.getCapacity());
-        assertEquals(9, result.getReservedTickets());
-        assertEquals(91, result.getAvailableTickets());
+        assertEquals(5, result.getReservedTickets());
+        assertEquals(95, result.getAvailableTickets());
         assertFalse(result.isSoldOut());
+        assertEquals(5,result.getOccupancyPercentage());
 
     }
 
