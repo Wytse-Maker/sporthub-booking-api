@@ -89,10 +89,9 @@ class EventAvailabilityUseCaseServiceTest {
     @Test
     void shouldThrowExceptionWhenSportEventDoesNotExist() {
 
-        ;
+
 
         when(sportEventRepositoryPort.findById(999L)).thenReturn(Optional.empty());
-
 
         assertThrows(ResourceNotFoundException.class, () -> {
             eventAvailabilityUseCaseService.getEventAvailability(999L);
