@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class EventAvailabilityUseCaseServiceTest {
@@ -153,11 +153,16 @@ class EventAvailabilityUseCaseServiceTest {
         when(sportEventRepositoryPort.findById(10L)).thenReturn(Optional.of(sportEvent));
         when(bookingRepositoryPort.findActiveBookingsBySportEventId(10L)).thenReturn(List.of());
 
+
+
         EventAvailability result = eventAvailabilityUseCaseService.getEventAvailability(10L);
 
         assertEquals(0, result.getCapacity());
         assertEquals(0, result.getReservedTickets());
         assertEquals(0, result.getOccupancyPercentage());
+        assertTrue(result.isSoldOut());
+        verify(sportEventRepositoryPort, times(1)).findById(10L);
+        verify(bookingRepositoryPort, times(1)).findActiveBookingsBySportEventId(10L);
     }
 
     @Test
