@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class EventAvailabilityUseCaseServiceTest {
@@ -51,17 +51,19 @@ class EventAvailabilityUseCaseServiceTest {
         booking2.setNumberOfTickets(3);
         Booking booking3 = new Booking();
         booking3.setNumberOfTickets(4);
+        booking3.setStatus(BookingStatus.CANCELLED);
 
         when(sportEventRepositoryPort.findById(10L)).thenReturn(Optional.of(sportEvent));
-        when(bookingRepositoryPort.findActiveBookingsBySportEventId(10L)).thenReturn(List.of(booking1, booking2, booking3));
+        when(bookingRepositoryPort.findActiveBookingsBySportEventId(10L)).thenReturn(List.of(booking1, booking2));
 
         EventAvailability result = eventAvailabilityUseCaseService.getEventAvailability(10L);
 
         assertEquals(10L, result.getSportEventId());
         assertEquals(100, result.getCapacity());
-        assertEquals(9, result.getReservedTickets());
-        assertEquals(91, result.getAvailableTickets());
+        assertEquals(5, result.getReservedTickets());
+        assertEquals(95, result.getAvailableTickets());
         assertFalse(result.isSoldOut());
+        assertEquals(5,result.getOccupancyPercentage());
 
     }
 
@@ -87,10 +89,9 @@ class EventAvailabilityUseCaseServiceTest {
     @Test
     void shouldThrowExceptionWhenSportEventDoesNotExist() {
 
-        ;
+
 
         when(sportEventRepositoryPort.findById(999L)).thenReturn(Optional.empty());
-
 
         assertThrows(ResourceNotFoundException.class, () -> {
             eventAvailabilityUseCaseService.getEventAvailability(999L);
@@ -152,11 +153,16 @@ class EventAvailabilityUseCaseServiceTest {
         when(sportEventRepositoryPort.findById(10L)).thenReturn(Optional.of(sportEvent));
         when(bookingRepositoryPort.findActiveBookingsBySportEventId(10L)).thenReturn(List.of());
 
+
+
         EventAvailability result = eventAvailabilityUseCaseService.getEventAvailability(10L);
 
         assertEquals(0, result.getCapacity());
         assertEquals(0, result.getReservedTickets());
         assertEquals(0, result.getOccupancyPercentage());
+        assertTrue(result.isSoldOut());
+        verify(sportEventRepositoryPort, times(1)).findById(10L);
+        verify(bookingRepositoryPort, times(1)).findActiveBookingsBySportEventId(10L);
     }
 
     @Test
